@@ -1,2 +1,16 @@
 # dimensional-reduction
 Repository for CP307 Data Structures and Algorithms Final Project
+
+UMAP files:
+1. my_umap.py: Main script for UMAP implemtation containing UMAP Class.
+2. test_umap.py: Script for basic tests of UMAP
+3. stochastic_gradient_descent.py: Script containing method to optimize low dimensional embedding
+4. umap.ipynb: Jupyter Notebook containing various initial experiments on offical and our UMAP implementation
+
+tSNE files:
+Diffusion Mapping Files:
+
+Experiments:
+1. experiments.ipynb: Jupyter Notebook containing all official experiments.
+2. experiments_helpers.py: Script containing methods to help with experiments. Mainly coordinate descent algorithms.
+3. contrastive_loss.py: Script containing class to calculate contrastive loss of embedding.
