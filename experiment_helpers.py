@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Nov 15 21:32:06 2021
-
-@author: chideraikpeamarom
-"""
-
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -332,7 +324,7 @@ def diffmap_coordinate_descent(data, label):
     tol = 100
     
     alpha = 0.5
-    k_neighbors = 300
+    k_neighbors = 150
     
     while abs(score - n_score) > tol:
         n_score = score
@@ -353,9 +345,9 @@ def get_best_alpha(data, label, kneigh):
     """GSS for alpha parameter"""
     loss = ContrastiveLoss()
     a = 0.1
-    b = 1
+    b = 4
     gr = (np.sqrt(5)+1)/2
-    tolerance = 0.05
+    tolerance = 0.2
     
     c = b - (b - a) / gr
     d = a + (b - a) / gr
@@ -384,9 +376,9 @@ def get_best_k_neighbors(data, label, alph):
     """GSS for kneighbors parameter"""
     loss = ContrastiveLoss()
     #min val for kneighbors
-    a = 200
+    a = 50
     #max
-    b = 800
+    b = 250
     
     gr = (np.sqrt(5)+1)/2
     tolerance = 50
