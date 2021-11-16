@@ -1,16 +1,24 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Nov 15 21:32:06 2021
+
+@author: chideraikpeamarom
+"""
+
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from contrastive_loss import ContrastiveLoss
 import umap
 import math
+from pydiffmap import diffusion_map as dm
 
 """Script with helper methods for experiments"""
 
 def get_Data():
     """
     reads in data and split 80/20 for training and testing
-
     Returns
     ---------
     train_data : array
@@ -306,6 +314,94 @@ def get_best_min_dist(data, label, epochs, neighbors, min_dist):
         embedding = reducer.fit_transform(data)
         d_loss = loss.get_loss(embedding, label)
         
+        if c_loss < d_loss:
+            b = d
+            min_loss = c_loss
+        else:
+            a = c
+            min_loss = d_loss
+        c = b - (b - a) / gr
+        d = a + (b - a) / gr
+        count += 1
+    return (b + a) / 2, min_loss
+
+def diffmap_coordinate_descent(data, label):
+    """coordinate descent method for Diffusion Map"""
+    score = np.inf
+    n_score = 0
+    tol = 100
+    
+    alpha = 0.5
+    k_neighbors = 300
+    
+    while abs(score - n_score) > tol:
+        n_score = score
+        a, n = get_best_perplexity(data, label, k_neighbors)
+        print(alpha, n)
+        if n < score:
+            score = n
+            alpha = a 
+        
+        k, n = get_best_exageration(data, label, alpha)
+        print(k_neighbors, n)
+        if n < score:
+            score = n
+            k_neighbors = k
+        
+    
+def get_best_alpha(data, label, kneigh):
+    """GSS for alpha parameter"""
+    loss = ContrastiveLoss()
+    a = 0.1
+    b = 1
+    gr = (np.sqrt(5)+1)/2
+    tolerance = 0.05
+    
+    c = b - (b - a) / gr
+    d = a + (b - a) / gr
+    min_loss = 0
+    count = 0
+    while abs(b - a) > tolerance:
+        #print(count, c, d)
+        Y = dm.DiffusionMap.from_sklearn(n_evecs = 2,epsilon = 1.0, alpha = c, k=kneigh)
+        c_loss = loss.get_loss(Y, label)
+        
+        Y = dm.DiffusionMap.from_sklearn(n_evecs = 2,epsilon = 1.0, alpha = d, k=kneigh)
+        d_loss = loss.get_loss(Y, label)
+        if c_loss < d_loss:
+            b = d
+            min_loss = c_loss
+        else:
+            a = c
+            min_loss = d_loss
+        c = b - (b - a) / gr
+        d = a + (b - a) / gr
+        count += 1
+    return (b + a) / 2, min_loss
+
+
+def get_best_k_neighbors(data, label, alph):
+    """GSS for kneighbors parameter"""
+    loss = ContrastiveLoss()
+    #min val for kneighbors
+    a = 200
+    #max
+    b = 800
+    
+    gr = (np.sqrt(5)+1)/2
+    tolerance = 50
+    
+    c = b - (b - a) / gr
+    d = a + (b - a) / gr
+    min_loss = 0
+    count = 0
+    while abs(b - a) > tolerance:
+        #print(count, c, d)
+        Y = dm.DiffusionMap.from_sklearn(n_evecs = 2,epsilon = 1.0, alpha = alph, k=c)
+        c_loss = loss.get_loss(Y, label)
+        
+        Y = dm.DiffusionMap.from_sklearn(n_evecs = 2,epsilon = 1.0, alpha = alph, k=d)
+        d_loss = loss.get_loss(Y, label)
         if c_loss < d_loss:
             b = d
             min_loss = c_loss
