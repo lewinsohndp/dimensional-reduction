@@ -2,7 +2,7 @@
 Repository for CP307 Data Structures and Algorithms Final Project
 
 UMAP:
-To use UMAP class instantiate my_umap.UMAP with wanted paramters. Then call UMAP.fit(X) where X is the dataset to be embedded in low dimension. 
+To use UMAP class instantiate my_umap.UMAP with wanted paramters. Then call UMAP.fit(X) where X is the dataset to be embedded in low dimension. The embedding can be accessed with UMAP.Y.
 The k-nearest neighbors calculator generally takes around 10 minutes of additional time to run. There are files saved in k_neighbors that are precalculated for 5, 15, and 30 neighbors for the penguins dataset that will greatly increase the speed of calculating the embedding. Specifically, load and prepare the penguin dataset as done in test_umap.py and then call UMAP.fit(X, use_precomputed=True)
 UMAP Files:
 1. my_umap.py: Main script for UMAP implemtation containing UMAP Class.
