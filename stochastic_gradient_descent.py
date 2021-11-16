@@ -6,13 +6,21 @@ def optimize_embedding(head_embedding, tail_embedding, a, b, dim, n_epochs, grap
 
     Parameters 
     -----------
+    head_embedding : array
+    tail_embedding : array
+    a : float
+    b : float
+    dim : int
+    n_epochs: int
+    graph : matrix
+    graph_rows : array
+    graph_cols : array
 
     Returns
     --------
     head_embedding
     """    
     alpha = 1.0
-    gamma = 1.0
     epochs_per_sample = make_epochs_per_sample(graph.data, n_epochs)
     epochs_per_negative_sample = epochs_per_sample / 5.0
     epoch_of_next_negative_sample = epochs_per_negative_sample.copy()
@@ -29,10 +37,7 @@ def optimize_embedding(head_embedding, tail_embedding, a, b, dim, n_epochs, grap
                     current = head_embedding[j]
                     other = tail_embedding[k]
 
-                    dist_output, grad_dist_output = euclidean_grad(
-                        current, other
-                    )
-                    _, rev_grad_dist_output = euclidean_grad(other, current)
+                    dist_output, grad_dist_output = euclidean_grad(current, other)
 
                     if dist_output > 0.0:
                         w_l = pow((1 + a * pow(dist_output, 2 * b)), -1)
@@ -67,25 +72,19 @@ def optimize_embedding(head_embedding, tail_embedding, a, b, dim, n_epochs, grap
                         else:
                             w_l = 1.0
 
-                        grad_coeff = gamma * 2 * b * w_l / (dist_output + 1e-6)
+                        grad_coeff = 2 * b * w_l / (dist_output + 1e-6)
 
                         for d in range(dim):
                             grad_d = clip(grad_coeff * grad_dist_output[d])
                             current[d] += grad_d * alpha
 
-                    epoch_of_next_negative_sample[i] += (
-                        n_neg_samples * epochs_per_negative_sample[i]
-                    )
-            #return epoch_of_next_sample, epoch_of_next_negative_sample
+                    epoch_of_next_negative_sample[i] += (n_neg_samples * epochs_per_negative_sample[i])
+            
         alpha = alpha * (1.0 - (float(n) / float(n_epochs)))
     return head_embedding
 
 def euclidean_grad(x, y):
-        """Standard euclidean distance and its gradient.
-        ..math::
-            D(x, y) = \sqrt{\sum_i (x_i - y_i)^2}
-            \frac{dD(x, y)}{dx} = (x_i - y_i)/D(x,y)
-        """
+        """Standard euclidean distance and its gradient."""
         result = 0.0
         for i in range(x.shape[0]):
             result += (x[i] - y[i]) ** 2
@@ -117,7 +116,7 @@ def clip(val):
     Parameters
     ----------
     val: float
-        The value to be clamped.
+       
     Returns
     -------
     The clamped value, now fixed to be in the range -4.0 to 4.0.
