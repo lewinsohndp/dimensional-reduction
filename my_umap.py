@@ -37,7 +37,6 @@ class UMAP():
         """
         Get k nearest neighbors for all points using nearest neighbor descent
         """
-        
         n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
         n_iters = max(5, int(round(np.log2(X.shape[0]))))
         index = NNDescent(X, metric='euclidean',n_neighbors=self.n_neighbors, low_memory=False, n_jobs=-1, verbose=True, n_iters=n_iters, n_trees=n_trees, max_candidates=60)
@@ -47,6 +46,7 @@ class UMAP():
         """
         Computes embedding of graph into specified dimensions
         parameters
+        Adapted from official UMAP implementation
         ---------
         graph : coo_matrix
             adjacency matrix of graph
@@ -74,117 +74,24 @@ class UMAP():
                 v0=np.ones(L.shape[0]),
                 maxiter=graph.shape[0] * 5,
             )
-        """eigenvalues, eigenvectors = scipy.sparse.linalg.lobpcg(
-                L, random_state.normal(size=(L.shape[0], k)), largest=False, tol=1e-8
-            )"""
+        
         order = np.argsort(eigenvalues)[1:k]
         return eigenvectors[:, order]
 
     def optimizeEmbedding(self, top_rep, Y):
         """
         Stochastic gradient descent optimization
-        right now not stochastic
+        
+        Parameters
+        ----------
+        top_rep : matrix
+            fuzzy set graph
+        Y : array
+            initial embedding
         """
-        """
-        a=self.a
-        b=self.b
-        alpha = 1.0
-        for i in range(self.epochs):
-            print('starting ' + str(i) + ' epoch')
-            
-            for x in range(top_rep.toarray().shape[0]):
-                for y in range(top_rep.toarray().shape[1]):
-                    #print(str(x) + "," + str(y))
-                #if np.random.randint() < top_rep[1]:
-                    
-                    dist, dist_grad = self.euclidean_grad(Y[x], Y[y])
-                    if dist > 0.0:
-                        w_l = pow((1 + a * pow(dist, 2 * b)), -1)
-                    else:
-                        w_l = 1.0
-                    grad_coeff = 2 * b * (w_l - 1) / (dist + 1e-6)
-
-                    for d in range(self.dims):
-                        grad_d = grad_coeff * dist_grad[d]
-                        #print(grad_d)
-                        Y[x][d] += alpha * grad_d
-                    
-                    for p in range(10):
-                        #k = tau_rand_int(rng_state) % n_vertices
-                        k = np.random.randint(len(Y))
-                        current = Y[x]
-                        other = Y[k]
-
-                        dist_output, grad_dist_output = self.euclidean_grad(
-                            current, other
-                        )
-
-                        if dist_output > 0.0:
-                            w_l = pow((1 + a * pow(dist_output, 2 * b)), -1)
-                        elif x == k:
-                            continue
-                        else:
-                            w_l = 1.0
-                        gamma = 1.0
-                        grad_coeff = gamma * 2 * b * w_l / (dist_output + 1e-6)
-
-                        for d in range(self.dims):
-                            grad_d = grad_coeff * grad_dist_output[d]
-                            Y[x][d] += grad_d * alpha
-
-            alpha = alpha * (1.0 - (float(i) / float(self.epochs)))
-            print('Done with ' + str(i) + ' epoch')
-        return Y
-        """
-        """for i in range(self.epochs):
-            Y = Y - self.CE_gradient(top_rep, Y)"""
 
         return stochastic_gradient_descent.optimize_embedding(Y,Y,self.a,self.b, self.dims, self.epochs, top_rep, self.graph_rows, self.graph_cols)
         
-    
-    def euclidean_grad(self, x, y):
-        """Standard euclidean distance and its gradient.
-        ..math::
-            D(x, y) = \sqrt{\sum_i (x_i - y_i)^2}
-            \frac{dD(x, y)}{dx} = (x_i - y_i)/D(x,y)
-        """
-        result = 0.0
-        for i in range(x.shape[0]):
-            result += (x[i] - y[i]) ** 2
-        d = np.sqrt(result)
-        grad = (x - y) / (1e-6 + d)
-        return d, grad
-
-    def prob_low_dim(self, Y):
-        """
-        Compute matrix of probabilities q_ij in low-dimensional space
-        """
-        inv_distances = np.power(1 + self.a * np.square(euclidean_distances(Y, Y))**self.b, -1)
-        return inv_distances
-
-    def CE(self, P, Y):
-        """
-        Compute Cross-Entropy (CE) from matrix of high-dimensional probabilities 
-        and coordinates of low-dimensional embeddings
-        """
-        Q = self.prob_low_dim(Y)
-        return - P * np.log(Q + 0.01) - (1 - P) * np.log(1 - Q + 0.01)
-
-    def CE_gradient(self, P, Y):
-        """
-        Compute the gradient of Cross-Entropy (CE)
-        """
-        P = np.matrix(P.toarray())
-        
-        y_diff = np.expand_dims(Y, 1) - np.expand_dims(Y, 0)
-        inv_dist = np.power(1 + self.a * np.square(euclidean_distances(Y, Y))**self.b, -1)
-        Q = np.dot(1 - P, np.power(0.001 + np.square(euclidean_distances(Y, Y)), -1))
-        np.fill_diagonal(Q, 0)
-        #Q = np.asarray(Q)
-        Q = Q / np.sum(Q, axis = 1, keepdims = True)
-        fact=np.expand_dims(self.a*P*(1e-8 + np.square(euclidean_distances(Y, Y)))**(self.b-1) - Q, 2)
-        return 2 * self.b * np.sum(fact * y_diff * np.expand_dims(inv_dist, 2), axis = 1)
-
     def find_ab_params(self, spread, min_dist):
         """Fit a, b params for the differentiable curve used in lower
         dimensional fuzzy simplicial complex construction. We want the
@@ -205,6 +112,7 @@ class UMAP():
     def smoothKNNDist(self, distances, rho):
         """
         Binary search for sigma such that the sum of all neighbors ...  = log2(n)
+        Adapted from UMAP implementation
         
         Parameters
         -----------
@@ -262,8 +170,12 @@ class UMAP():
 
     def computeSkeletalEdges(self, indices, dists, rho, sigma):
         """
+        Get weight of edges between vertex and it's neighbors
+
         Parameters
         ----------
+        indices : array
+        dists : array
         rho : float
         sigma : float
 

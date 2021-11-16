@@ -6,6 +6,8 @@ import umap
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+"""script for running umap implementation for testing"""
+
 if __name__ == '__main__':
     myUmap = UMAP(n_neighbors = 30, dims=2, min_dist=.1, epochs=1000)
     penguins = pd.read_csv("https://github.com/allisonhorst/palmerpenguins/raw/5b5891f01b52ae26ad8cb9755ec93672f49328a8/data/penguins_size.csv")

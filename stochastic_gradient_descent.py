@@ -1,5 +1,7 @@
 import numpy as np
-
+"""Script for stochastic gradient descent
+    Adapted from UMAP official implementation
+"""
 def optimize_embedding(head_embedding, tail_embedding, a, b, dim, n_epochs, graph, graph_rows, graph_cols):
     """
     Optimize embedding

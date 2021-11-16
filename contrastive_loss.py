@@ -37,6 +37,7 @@ class ContrastiveLoss():
 
 def euclidean(x, y):
     """Standard euclidean distance.
+    Adapted from UMAP implementation
     ..math::
         D(x, y) = \sqrt{\sum_i (x_i - y_i)^2}
     """
