@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from contrastive_loss import ContrastiveLoss
+import umap
+import math
 
 """Script with helper methods for experiments"""
 
@@ -176,34 +178,141 @@ def get_best_momentum(data, label, p, e, i, tsne):
         count += 1
     return (b + a) / 2, min_loss
     
-def umap_coordinate_descent(data, label, umap):
+def umap_coordinate_descent(data, label):
     """coordinate descent method for UMAP"""
     score = np.inf
     n_score = 0
     iterations = 100
     tol = 100
     
-    perplexity = 30
-    exageration = 4
-    momentum = 0.65
+    epochs = 200
+    neighbors = 15
+    min_dist = 0.1
+
     while abs(score - n_score) > tol:
         n_score = score
-        p, n = get_best_perplexity(data, label, exageration, momentum, iterations, tsne)
-        print(perplexity, n)
+        e, n = get_best_epochs(data, label, epochs, neighbors, min_dist)
+        print(e, n)
         if n < score:
             score = n
-            perplexity = p 
-        
-        e, n = get_best_exageration(data, label, perplexity, momentum, iterations, tsne)
-        print(exageration, n)
+            epochs = e
+
+        neigh, n = get_best_neighbors(data, label, epochs, neighbors, min_dist)
+        print(neigh, n)
         if n < score:
             score = n
-            exageration = e
+            neighbors = neigh
         
-        m, n = get_best_momentum(data, label, perplexity, exageration, iterations, tsne)
-        print(momentum, n)
+        m, n = get_best_min_dist(data, label, epochs, neighbors, min_dist)
+        print(m, n)
         if n < score:
             score = n
-            momentum = m
+            min_dist = m
         
+        print(n_score)
+        print(score)
         print()
+    
+    print("Epochs: " + str(epochs))
+    print("Neighbors: " + str(neighbors))
+    print("min-dist: " + str(min_dist))
+    return (epochs, neighbors, min_dist, score)
+
+def get_best_epochs(data, label, epochs, neighbors, min_dist):
+    """GSS for epochs parameter"""
+    loss = ContrastiveLoss()
+    a = 0
+    b = 2000
+    gr = (np.sqrt(5)+1)/2
+    tolerance = 50
+    
+    c = math.floor(b - (b - a) / gr)
+    d = math.floor(a + (b - a) / gr)
+    min_loss = 0
+    count = 0
+    while abs(b - a) > tolerance:
+        #print(count, c, d)
+        reducer = umap.UMAP(n_neighbors=neighbors, n_epochs=c, verbose=False, min_dist=min_dist)
+        embedding = reducer.fit_transform(data)
+        c_loss = loss.get_loss(embedding, label)
+        
+        reducer = umap.UMAP(n_neighbors=neighbors, n_epochs=d, verbose=False, min_dist= min_dist)
+        embedding = reducer.fit_transform(data)
+        d_loss = loss.get_loss(embedding, label)
+
+        if c_loss < d_loss:
+            b = d
+            min_loss = c_loss
+        else:
+            a = c
+            min_loss = d_loss
+        c = math.floor(b - (b - a) / gr)
+        d = math.floor(a + (b - a) / gr)
+        count += 1
+    return math.floor((b + a) / 2), min_loss
+
+def get_best_neighbors(data, label, epochs, neighbors, min_dist):
+    """GSS for epochs parameter"""
+    loss = ContrastiveLoss()
+    a = 5
+    b = 50
+    gr = (np.sqrt(5)+1)/2
+    tolerance = 5
+    
+    c = math.floor(b - (b - a) / gr)
+    d = math.floor(a + (b - a) / gr)
+    min_loss = 0
+    count = 0
+    while abs(b - a) > tolerance:
+        #print(count, c, d)
+        reducer = umap.UMAP(n_neighbors=c, n_epochs=epochs, verbose=False, min_dist=min_dist)
+        embedding = reducer.fit_transform(data)
+        c_loss = loss.get_loss(embedding, label)
+        
+        reducer = umap.UMAP(n_neighbors=d, n_epochs=epochs, verbose=False, min_dist= min_dist)
+        embedding = reducer.fit_transform(data)
+        d_loss = loss.get_loss(embedding, label)
+        
+        if c_loss < d_loss:
+            b = d
+            min_loss = c_loss
+        else:
+            a = c
+            min_loss = d_loss
+        c = math.floor(b - (b - a) / gr)
+        d = math.floor(a + (b - a) / gr)
+        count += 1
+    return math.floor((b + a) / 2), min_loss
+
+def get_best_min_dist(data, label, epochs, neighbors, min_dist):
+    """GSS for epochs parameter"""
+    loss = ContrastiveLoss()
+    a = .01
+    b = .99
+    gr = (np.sqrt(5)+1)/2
+    tolerance = 0.05
+    
+    c = b - (b - a) / gr
+    d = a + (b - a) / gr
+    min_loss = 0
+    count = 0
+    while abs(b - a) > tolerance:
+        #print(count, c, d)
+        reducer = umap.UMAP(n_neighbors=neighbors, n_epochs=epochs, verbose=False, min_dist=c)
+        embedding = reducer.fit_transform(data)
+        c_loss = loss.get_loss(embedding, label)
+        
+        reducer = umap.UMAP(n_neighbors=neighbors, n_epochs=epochs, verbose=False, min_dist= d)
+        embedding = reducer.fit_transform(data)
+        d_loss = loss.get_loss(embedding, label)
+        
+        if c_loss < d_loss:
+            b = d
+            min_loss = c_loss
+        else:
+            a = c
+            min_loss = d_loss
+        c = b - (b - a) / gr
+        d = a + (b - a) / gr
+        count += 1
+    return (b + a) / 2, min_loss
