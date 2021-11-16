@@ -12,6 +12,9 @@ UMAP Files:
 5. k_neighbors: directory containing some precomputed KNNs for penguin dataset.
 
 tSNE files:
+1. tsne1.py: Whole script for the t-SNE implementation containing the TSNE Class 
+2. tsne.ipynb: Jupyter Notebook that has multiple experiments and test, some are also in experiments.ipynb
+
 Diffusion Mapping Files:
 
 Experiments:
