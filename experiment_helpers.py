@@ -192,30 +192,30 @@ def umap_coordinate_descent(data, label):
     while abs(score - n_score) > tol:
         n_score = score
         e, n = get_best_epochs(data, label, epochs, neighbors, min_dist)
-        print(e, n)
+        #print(e, n)
         if n < score:
             score = n
             epochs = e
 
         neigh, n = get_best_neighbors(data, label, epochs, neighbors, min_dist)
-        print(neigh, n)
+        #print(neigh, n)
         if n < score:
             score = n
             neighbors = neigh
         
         m, n = get_best_min_dist(data, label, epochs, neighbors, min_dist)
-        print(m, n)
+        #print(m, n)
         if n < score:
             score = n
             min_dist = m
         
-        print(n_score)
-        print(score)
-        print()
+        #print(n_score)
+        #print(score)
+        #print()
     
-    print("Epochs: " + str(epochs))
-    print("Neighbors: " + str(neighbors))
-    print("min-dist: " + str(min_dist))
+    #print("Epochs: " + str(epochs))
+    #print("Neighbors: " + str(neighbors))
+    #print("min-dist: " + str(min_dist))
     return (epochs, neighbors, min_dist, score)
 
 def get_best_epochs(data, label, epochs, neighbors, min_dist):
