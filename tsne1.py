@@ -46,8 +46,6 @@ class TSNE():
             j = 0
             max_attempts = 50
             Haway = H - target
-            if i < 2:
-                print(Haway)
             while np.abs(Haway) > tolerance and max_attempts > j:
                 if Haway > 0:
                     bmin = beta[i].copy()
