@@ -1,26 +1,40 @@
 import numpy as np
-import pylab
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
-#import penguins as pg
-
 
 class TSNE():
 
 
-    def getPH(self, D, beta = 1.0):
-        P = np.exp(-D.copy() * beta)
+    def getPH(self, D, sigma = 1.0):
+        """
+        Calculate all P(i) and H(P(i)) given a specific sigma 
+        Parameters
+        -----------
+        D : np.array([n][d])
+            array with n datapoints and d dimentions
+        sigma : float
+            Gaussian variable for individual vertice
+        """
+        P = np.exp(-D.copy() * sigma)
         sumP = sum(P)
-        H = np.log(sumP) + beta * np.sum(D * P) / sumP
+        H = np.log(sumP) + sigma * np.sum(D * P) / sumP
         P = P / sumP
         return P, H 
 
     def assignPValues(self, X, perplexity = 30.0, tolerance = 1e-5):
-
+        """
+        Instantiate all the p(i|j) values for data
+        Parameters
+        -----------
+        X : np.array([n][d])
+            array with n datapoints and d dimentions
+        perplexity : int
+            used to get sigma for distribution probability
+        tolerance : float
+            how acurate the binary search is
+        """
+        #Equation 1 from t-SNE paper
         (n, d) = X.shape
         P = np.zeros((n,n))
-        beta = np.ones((n,1))
-        #no clue what this does
+        sigma = np.ones((n,1))
         sum_X = np.sum(np.square(X), 1)
         D = np.add(np.add(-2 * np.dot(X, X.T), sum_X).T, sum_X)
         target = np.log(perplexity)
@@ -28,31 +42,34 @@ class TSNE():
         #Find P for every node
         for i in range(n):
 
-            bmin = -np.inf
-            bmax = np.inf
+            smin = -np.inf
+            smax = np.inf
 
             #r_ combines along the first axis, removes i from list
             Di = D[i, np.concatenate((np.r_[0:i], np.r_[i+1:n]))]
-            #get the H(pi) for i 
-            (Pi, H) = self.getPH(Di, beta[i])
+
+            #get first H(pi) for sigma of 1
+            (Pi, H) = self.getPH(Di, sigma[i])
 
             j = 0
             max_attempts = 50
             Haway = H - target
+
+            #Binary search for sigma
             while np.abs(Haway) > tolerance and max_attempts > j:
                 if Haway > 0:
-                    bmin = beta[i].copy()
-                    if bmax == np.inf or bmax == -np.inf:
-                        beta[i] = beta[i] * 2.
+                    smin = sigma[i].copy()
+                    if smax == np.inf or smax == -np.inf:
+                        sigma[i] = sigma[i] * 2.
                     else:
-                        beta[i] = (beta[i] + bmax) / 2.
+                        sigma[i] = (sigma[i] + smax) / 2.
                 else:
-                    bmax = beta[i].copy()
-                    if bmin == np.inf or bmin == -np.inf:
-                        beta[i] = beta[i] / 2.
+                    smax = sigma[i].copy()
+                    if smin == np.inf or smin == -np.inf:
+                        sigma[i] = sigma[i] / 2.
                     else:
-                        beta[i] = (beta[i] + bmin) / 2.
-                (Pi, H) = self.getPH(Di, beta[i])
+                        sigma[i] = (sigma[i] + smin) / 2.
+                (Pi, H) = self.getPH(Di, sigma[i])
                 Haway = H - target
                 j += 1
 
@@ -60,29 +77,28 @@ class TSNE():
 
         return P
 
-    def pca(self, X=np.array([]), no_dims=50):
-        """
-            Runs PCA on the NxD array X in order to reduce its dimensionality to
-            no_dims dimensions.
-        """
-
-
-        (n, d) = X.shape
-        X = X - np.tile(np.mean(X, 0), (n, 1))
-        (l, M) = np.linalg.eig(np.dot(X.T, X))
-        Y = np.dot(X, M[:, 0:no_dims])
-        return Y
-
-    def tsne(self, X, dims = 2, perplexity = 20, next_dims = 50, exageration = 2.,
+    def tsne(self, X, dims = 2, perplexity = 20, exageration = 2.,
          momentum = 0.65, iterations = 200):
-        #PCA to get a lower dimention to 50 if needed
+        """
+        Parameters
+        -----------
+        X : np.array([n][d])
+            array with n datapoints and d dimentions, representing the data in high dimention
+        dims : int
+            dimension of lower dimention array
+        perplexity : int
+            used to get sigma for distribution probability
+        exageration : float
+            how quickly to accelerate the change at the start
+        momentum : float
+            amount of change to apply to the gradient
+        iteration : int
+            amount of iterations to change the lower dimentions
+        """
 
-        #get the high dimentional shape
-        X = self.pca(X, next_dims).real
-        (n, d) = X.shape
-
-        #sample initial solution Y(0) = {y1, y2, ... yn} from N(0, 10^-4I)
+        #Random initial solution Y(0) = {y1, y2, ... yn} from N(0, 10^-4I)
         #Y is the final output
+        (n, d) = X.shape
         Y = np.random.rand(n, dims)
         gradient = np.zeros((n, dims))
         Yfirst = np.zeros((n, dims))
@@ -93,19 +109,19 @@ class TSNE():
 
 
         #compute pairwise affinities p(i|j) with perplexity Perp 
-        # EQ1 from paper
+        #Equation 1 from t-SNE paper
         P = self.assignPValues(X, perplexity, 1e-5)
         #set p(ij) = p(j|i) + p(i|j) / 2n
         P = P + np.transpose(P)
         P = P / (2*np.sum(P))
-        P = P * float(exageration)								# early exaggeration
+        P = P * float(exageration)
 
         
-        #for t = 1 to iteration do 
+        #compute Q(i|j) t(iteration) times
         for t in range(iterations):
 
             #compute low dimensional affinities q(ij) 
-            # EQ4 from paper
+            #Equation 4 from t-SNE paper
             sum_Y = np.sum(np.square(Y), 1)
             num = -2. * np.dot(Y, Y.T)
             num = 1. / (1. + np.add(np.add(num, sum_Y).T, sum_Y))
@@ -114,7 +130,7 @@ class TSNE():
             Q = num / np.sum(num)
             Q = np.maximum(Q, 1e-12)
 
-            #compute gradient C/Y EQ5
+            #compute gradient dC/dY EQ5
             PminQ = P - Q
             for i in range(n):
                 gradient[i, :] = np.sum(np.tile(PminQ[:, i] * num[:, i], (dims, 1)).T * (Y[i, :] - Y), 0)
@@ -126,6 +142,6 @@ class TSNE():
             Yfirst = momentum * Yfirst - eta * (gains * gradient)
             Y = Y + Yfirst
             Y = Y - np.tile(np.mean(Y, 0), (n, 1))
-            if iter == 100:
-                P = P / float(exageration)
         return Y
+        
+
