@@ -1,8 +1,11 @@
 import numpy as np
 from pynndescent import NNDescent
+import umap
 import scipy
 from sklearn.utils import check_random_state
 from sklearn.metrics.pairwise import euclidean_distances
+from scipy.optimize import curve_fit
+import stochastic_gradient_descent
 
 class UMAP():
     def __init__(self, n_neighbors=10, dims=2, min_dist=.1, epochs=10):
@@ -27,12 +30,17 @@ class UMAP():
         self.Y = None
         self.a = 1
         self.b = 1
+        self.graph_cols = None
+        self.graph_rows = None
     
     def get_neighbors(self, X):
         """
         Get k nearest neighbors for all points using nearest neighbor descent
         """
-        index = NNDescent(X, n_neighbors=self.n_neighbors)
+        
+        n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
+        n_iters = max(5, int(round(np.log2(X.shape[0]))))
+        index = NNDescent(X, metric='euclidean',n_neighbors=self.n_neighbors, low_memory=False, n_jobs=-1, verbose=True, n_iters=n_iters, n_trees=n_trees, max_candidates=60)
         self.knn_indices, self.knn_dists = index.neighbor_graph
 
     def spectralEmbedding(self, graph):
@@ -76,6 +84,7 @@ class UMAP():
         """
         Stochastic gradient descent optimization
         right now not stochastic
+        """
         """
         a=self.a
         b=self.b
@@ -127,11 +136,11 @@ class UMAP():
             print('Done with ' + str(i) + ' epoch')
         return Y
         """
-        for i in range(self.epochs):
-            Y = Y - self.CE_gradient(top_rep, Y)
+        """for i in range(self.epochs):
+            Y = Y - self.CE_gradient(top_rep, Y)"""
 
-        return Y
-        """
+        return stochastic_gradient_descent.optimize_embedding(Y,Y,self.a,self.b, self.dims, self.epochs, top_rep, self.graph_rows, self.graph_cols)
+        
     
     def euclidean_grad(self, x, y):
         """Standard euclidean distance and its gradient.
@@ -166,7 +175,7 @@ class UMAP():
         Compute the gradient of Cross-Entropy (CE)
         """
         P = np.matrix(P.toarray())
-        Y = np.array(Y)
+        
         y_diff = np.expand_dims(Y, 1) - np.expand_dims(Y, 0)
         inv_dist = np.power(1 + self.a * np.square(euclidean_distances(Y, Y))**self.b, -1)
         Q = np.dot(1 - P, np.power(0.001 + np.square(euclidean_distances(Y, Y)), -1))
@@ -175,6 +184,23 @@ class UMAP():
         Q = Q / np.sum(Q, axis = 1, keepdims = True)
         fact=np.expand_dims(self.a*P*(1e-8 + np.square(euclidean_distances(Y, Y)))**(self.b-1) - Q, 2)
         return 2 * self.b * np.sum(fact * y_diff * np.expand_dims(inv_dist, 2), axis = 1)
+
+    def find_ab_params(self, spread, min_dist):
+        """Fit a, b params for the differentiable curve used in lower
+        dimensional fuzzy simplicial complex construction. We want the
+        smooth curve (from a pre-defined family with simple gradient) that
+        best matches an offset exponential decay.
+        """
+
+        def curve(x, a, b):
+            return 1.0 / (1.0 + a * x ** (2 * b))
+
+        xv = np.linspace(0, spread * 3, 300)
+        yv = np.zeros(xv.shape)
+        yv[xv < min_dist] = 1.0
+        yv[xv >= min_dist] = np.exp(-(xv[xv >= min_dist] - min_dist) / spread)
+        params, covar = curve_fit(curve, xv, yv)
+        return params[0], params[1]
 
     def smoothKNNDist(self, distances, rho):
         """
@@ -208,7 +234,7 @@ class UMAP():
                     psum += 1.0
             
             #if sum is close enough to log2(k)
-            if np.fabs(psum - np.log2(k)):
+            if np.fabs(psum - target) < 1e-5:
                 break
 
             if psum > target:
@@ -223,6 +249,15 @@ class UMAP():
                     mid = (lo + hi) /2.0
 
         #maybe need to add scaling
+        MIN_K_DIST_SCALE = 1e-3
+        if rho > 0.0:
+            mean_ith_distances = np.mean(distances)
+            if mid < MIN_K_DIST_SCALE * mean_ith_distances:
+                mid = MIN_K_DIST_SCALE * mean_ith_distances
+        else:
+            mean_distances = np.mean(self.knn_dists)
+            if mid < MIN_K_DIST_SCALE * mean_distances:
+                mid = MIN_K_DIST_SCALE * mean_distances
         return mid
 
     def computeSkeletalEdges(self, indices, dists, rho, sigma):
@@ -241,13 +276,16 @@ class UMAP():
         """
         edges = []
         x = indices[0]
-        for y in range(len(indices) - 1):
-            if dists[y] - rho < 0 or sigma == 0:
-                d_xy = 1.0
+        for index, coord in enumerate(indices):
+            if coord == x: 
+                edges.append(((x,coord), 0.0))
+                continue
+            if dists[index] - rho < 0 or sigma == 0:
+                d_xy = 1
             else:
-                d_xy = (dists[y] - rho) / sigma
+                d_xy = np.exp(-((dists[index] - rho) / sigma))
             
-            edges.append(((x,y), np.exp(-d_xy)))
+            edges.append(((x,coord), d_xy))
         
         return edges
 
@@ -296,7 +334,17 @@ class UMAP():
             
         graph = scipy.sparse.coo_matrix((weights, (rows, cols)), shape=(X.shape[0], X.shape[0]))
         graph.eliminate_zeros()
-        graph.sum_duplicates()
+        self.graph_rows = graph.row
+        self.graph_cols = graph.col
+        """transpose = graph.transpose()
+        prod_matrix = graph.multiply(transpose)
+        graph = (
+            (graph + transpose - prod_matrix)
+        )
+        graph.eliminate_zeros()"""
+        #graph = graph.tocoo()
+        #graph.sum_duplicates()
+        #graph = graph + np.transpose(graph) - np.multiply(graph, np.transpose(graph))
         return graph
 
     def fit(self, X):
@@ -308,18 +356,25 @@ class UMAP():
         """
         #construct relevant wieghted graph
         #for all x in X, use local fuzzy simplicalset(X,x,n)
-        self.get_neighbors(X)
+        try:
+            self.knn_indices = np.loadtxt('/Users/daniel/desktop/cp307/dimensional-reduction/k_neighbors/' + str(self.n_neighbors) + '_indices.csv', delimiter=",")
+            self.knn_dists = np.loadtxt('/Users/daniel/desktop/cp307/dimensional-reduction/k_neighbors/' + str(self.n_neighbors) + '_dists.csv', delimiter=",")
+        except OSError:
+            print("getting neighbors")
+            self.get_neighbors(X)
+            print("done getting neighbors")
+
+        self.a, self.b = self.find_ab_params(1, self.min_dist)
         fs_set = []
+
         for x in range(X.shape[0]):
             fs_set.append(self.localFuzzySimplicialSet(X,x))
         
         top_rep = self.combine_sets(X, fs_set)
-        print(str(len(top_rep.row)))
-        print(str(len(top_rep.col)))
-        print(top_rep.toarray())
+
         #perform optimization of the graph layout
         self.Y = self.spectralEmbedding(top_rep)
-        print(len(self.Y))
         self.Y = self.optimizeEmbedding(top_rep, self.Y)
+    
     
     
