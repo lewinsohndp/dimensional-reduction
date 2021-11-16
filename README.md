@@ -9,6 +9,7 @@ UMAP Files:
 2. test_umap.py: Script for basic tests of UMAP
 3. stochastic_gradient_descent.py: Script containing method to optimize low dimensional embedding
 4. umap.ipynb: Jupyter Notebook containing various initial experiments on offical and our UMAP implementation
+5. k_neighbors: directory containing some precomputed KNNs for penguin dataset.
 
 tSNE files:
 Diffusion Mapping Files:
