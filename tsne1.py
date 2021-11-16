@@ -6,12 +6,6 @@ from sklearn.preprocessing import StandardScaler
 
 
 class TSNE():
-        
-
-    def __init__(self, iterations = 200, learning_rate = 0.01, momentum = 0.65):
-        self.iterations = iterations
-        self.lr = learning_rate
-        self.momentum = momentum
 
 
     def getPH(self, D, beta = 1.0):
@@ -33,8 +27,7 @@ class TSNE():
 
         #Find P for every node
         for i in range(n):
-            if i % 100 == 0:
-                print("Computing P-values for point %d of %d..." % (i, n))
+
             bmin = -np.inf
             bmax = np.inf
 
@@ -73,7 +66,6 @@ class TSNE():
             no_dims dimensions.
         """
 
-        print("Preprocessing the data using PCA...")
 
         (n, d) = X.shape
         X = X - np.tile(np.mean(X, 0), (n, 1))
@@ -81,7 +73,8 @@ class TSNE():
         Y = np.dot(X, M[:, 0:no_dims])
         return Y
 
-    def tsne(self, X, dims = 2, perplexity = 20, next_dims = 50, exageration = 2.):
+    def tsne(self, X, dims = 2, perplexity = 20, next_dims = 50, exageration = 2.,
+         momentum = 0.65, iterations = 200):
         #PCA to get a lower dimention to 50 if needed
 
         #get the high dimentional shape
@@ -109,10 +102,7 @@ class TSNE():
 
         
         #for t = 1 to iteration do 
-        for t in range(self.iterations):
-
-            if t % 50 == 0:
-                print("Iteration %d of %d..." % (t, self.iterations))
+        for t in range(iterations):
 
             #compute low dimensional affinities q(ij) 
             # EQ4 from paper
@@ -133,52 +123,9 @@ class TSNE():
             gains = (gains + 0.2) * ((gradient > 0.) != (Yfirst > 0.)) + \
                     (gains * 0.8) * ((gradient > 0.) == (Yfirst > 0.))
             gains[gains < min_gain] = min_gain
-            Yfirst = self.momentum * Yfirst - eta * (gains * gradient)
+            Yfirst = momentum * Yfirst - eta * (gains * gradient)
             Y = Y + Yfirst
             Y = Y - np.tile(np.mean(Y, 0), (n, 1))
             if iter == 100:
                 P = P / float(exageration)
         return Y
-        
-
-            
-        return Y
-if __name__ == "__main__":
-    tsne = TSNE(iterations=200)
-
-    print("Run Y = tsne.tsne(X, no_dims, perplexity) to perform t-SNE on your dataset.")
-    print("Running example on 2,500 MNIST digits...")
-
-    penguins = pd.read_csv("https://github.com/allisonhorst/palmerpenguins/raw/5b5891f01b52ae26ad8cb9755ec93672f49328a8/data/penguins_size.csv")
-    penguins = penguins.dropna()
-    penguin_data = penguins[
-    [
-        "culmen_length_mm",
-        "culmen_depth_mm",
-        "flipper_length_mm",
-        "body_mass_g",
-    ]
-    ].values
-    scaled_penguin_data = StandardScaler().fit_transform(penguin_data)
-
-    X = scaled_penguin_data
-    Y = tsne.tsne(X, 2, 20.0, exageration=4)
-
-    labels = penguins[
-    [
-        "species_short",
-    ]
-    ].values
-    f_label = []
-    for i in range(len(labels)):
-        if labels[i] == 'Adelie':
-            f_label.append(1)
-            #labels[i] = 1
-        elif labels[i] == 'Chinstrap':
-            #labels[i] = 2
-            f_label.append(2)
-        else: 
-            #labels[i] = 3
-            f_label.append(3)
-    pylab.scatter(Y[:, 0], Y[:, 1], 20, f_label)
-    pylab.show()
