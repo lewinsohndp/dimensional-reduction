@@ -13,6 +13,7 @@ from contrastive_loss import ContrastiveLoss
 import umap
 import math
 from pydiffmap import diffusion_map as dm
+import time
 
 """Script with helper methods for experiments"""
 
@@ -64,6 +65,18 @@ def splitData(data):
     train, test = np.split(data, [split])
     return train, test
 
+def tsne_score_test(test_data, test_label, p, e, m, itera, tsne):
+    loss = ContrastiveLoss(5)
+    sum_score = 0
+    sum_time = 0
+    s = time.time()
+    Y = tsne.tsne(test_data, dims = 2, perplexity = p, exageration = e, momentum = m, iterations = itera)
+    e = time.time()
+    sum_time += e-s
+    now_score = loss.get_loss(Y, test_label)
+    sum_score += now_score
+    return sum_score, sum_time
+
 def tsne_coordinate_descent(data, label, tsne):
     """coordinate descent method for TSNE"""
     score = np.inf
@@ -93,16 +106,18 @@ def tsne_coordinate_descent(data, label, tsne):
         if n < score:
             score = n
             momentum = m
-        
-        print()
+    print()
+    print(score)
+    print(perplexity, exageration, momentum, iterations)
+    return perplexity, exageration, momentum, iterations, score
     
 def get_best_perplexity(data, label, e, m, i, tsne):
     """GSS for perplexity parameter"""
-    loss = ContrastiveLoss()
+    loss = ContrastiveLoss(5)
     a = 10
-    b = 60
+    b = 50
     gr = (np.sqrt(5)+1)/2
-    tolerance = 5
+    tolerance = 3
     
     c = b - (b - a) / gr
     d = a + (b - a) / gr
@@ -336,17 +351,18 @@ def diffmap_coordinate_descent(data, label):
     
     while abs(score - n_score) > tol:
         n_score = score
-        a, n = get_best_perplexity(data, label, k_neighbors)
-        print(alpha, n)
+        a, n = get_best_alpha(data, label, k_neighbors)
+        #print(alpha, n)
         if n < score:
             score = n
             alpha = a 
         
-        k, n = get_best_exageration(data, label, alpha)
-        print(k_neighbors, n)
+        k, n = get_best_k_neighbors(data, label, alpha)
+        #print(k_neighbors, n)
         if n < score:
             score = n
             k_neighbors = k
+    return alpha, k_neighbors
         
     
 def get_best_alpha(data, label, kneigh):
@@ -363,11 +379,14 @@ def get_best_alpha(data, label, kneigh):
     count = 0
     while abs(b - a) > tolerance:
         #print(count, c, d)
-        Y = dm.DiffusionMap.from_sklearn(n_evecs = 2,epsilon = 1.0, alpha = c, k=kneigh)
+        dmap=dm.DiffusionMap.from_sklearn(n_evecs = 2,epsilon = 1.0, alpha = c, k=kneigh)
+        Y = dmap.fit_transform(data)
         c_loss = loss.get_loss(Y, label)
         
-        Y = dm.DiffusionMap.from_sklearn(n_evecs = 2,epsilon = 1.0, alpha = d, k=kneigh)
+        dmap=dm.DiffusionMap.from_sklearn(n_evecs = 2,epsilon = 1.0, alpha = d, k=kneigh)
+        Y = dmap.fit_transform(data)        
         d_loss = loss.get_loss(Y, label)
+
         if c_loss < d_loss:
             b = d
             min_loss = c_loss
@@ -397,10 +416,12 @@ def get_best_k_neighbors(data, label, alph):
     count = 0
     while abs(b - a) > tolerance:
         #print(count, c, d)
-        Y = dm.DiffusionMap.from_sklearn(n_evecs = 2,epsilon = 1.0, alpha = alph, k=c)
+        dmap=dm.DiffusionMap.from_sklearn(n_evecs = 2,epsilon = 1.0, alpha = alph, k=c)
+        Y = dmap.fit_transform(data)
         c_loss = loss.get_loss(Y, label)
         
-        Y = dm.DiffusionMap.from_sklearn(n_evecs = 2,epsilon = 1.0, alpha = alph, k=d)
+        dmap=dm.DiffusionMap.from_sklearn(n_evecs = 2,epsilon = 1.0, alpha = alph, k=d)
+        Y = dmap.fit_transform(data)
         d_loss = loss.get_loss(Y, label)
         if c_loss < d_loss:
             b = d
