@@ -13,6 +13,7 @@ UMAP Files:
 3. stochastic_gradient_descent.py: Script containing method to optimize low dimensional embedding
 4. umap.ipynb: Jupyter Notebook containing various initial experiments on offical and our UMAP implementation
 5. k_neighbors: directory containing some precomputed KNNs for penguin dataset.
+6. example_umap.ipynb: basic example of how to use UMAP implementation on Penguin data
 
 tSNE files:
 1. tsne1.py: Whole script for the t-SNE implementation containing the TSNE Class 
