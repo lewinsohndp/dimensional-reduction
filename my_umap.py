@@ -113,7 +113,7 @@ class UMAP():
         """
         Binary search for sigma such that the sum of all neighbors ...  = log2(n)
         Adapted from UMAP implementation
-        
+
         Parameters
         -----------
         rho : float
@@ -259,24 +259,33 @@ class UMAP():
         #graph = graph + np.transpose(graph) - np.multiply(graph, np.transpose(graph))
         return graph
 
-    def fit(self, X):
+    def fit(self, X, use_precomputed=False):
         """
         Parameters
         -----------
         X : array of shape (n_samples, n_features)
             dataset
+        use_precomputed : Boolean
+            True if precomputed neighbors should be looked for
         """
-        #construct relevant wieghted graph
-        #for all x in X, use local fuzzy simplicalset(X,x,n)
-        try:
-            self.knn_indices = np.loadtxt('/Users/daniel/desktop/cp307/dimensional-reduction/k_neighbors/' + str(self.n_neighbors) + '_indices.csv', delimiter=",")
-            self.knn_dists = np.loadtxt('/Users/daniel/desktop/cp307/dimensional-reduction/k_neighbors/' + str(self.n_neighbors) + '_dists.csv', delimiter=",")
-        except OSError:
+        
+        if use_precomputed:
+            try:
+                self.knn_indices = np.loadtxt('k_neighbors/' + str(self.n_neighbors) + '_indices.csv', delimiter=",")
+                self.knn_dists = np.loadtxt('k_neighbors/' + str(self.n_neighbors) + '_dists.csv', delimiter=",")
+            except OSError:
+                print("getting neighbors")
+                self.get_neighbors(X)
+                print("done getting neighbors")
+        else: 
             print("getting neighbors")
             self.get_neighbors(X)
             print("done getting neighbors")
 
         self.a, self.b = self.find_ab_params(1, self.min_dist)
+        
+        #construct relevant wieghted graph
+        #for all x in X, use local fuzzy simplicalset(X,x,n)
         fs_set = []
 
         for x in range(X.shape[0]):
