@@ -7,6 +7,8 @@ To use UMAP class instantiate my_umap.UMAP with wanted paramters. Then call UMAP
 t-SEN:
 To use the t-SNE Class, 
 
+Diffusion Map: To use the DiffusionMap class, create an instance (for example one called diff_map) of the class and fill in needed parameters (data and labels). Using the DiffusionMap instance, call the apply_difffusions method, passing in the instance's data variable (ex: diff_map.data) and a specified alpha variable (default is .8). Save what is returned from the apply_diffusions method as a variable. Then using the instance of the DiffusionMap class, call the plot_diffusions method, passing in the returned value from apply_diffusions.
+
 UMAP Files:
 1. my_umap.py: Main script for UMAP implemtation containing UMAP Class.
 2. test_umap.py: Script for basic tests of UMAP
