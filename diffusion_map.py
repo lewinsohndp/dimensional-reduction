@@ -62,7 +62,7 @@ class DiffusionMap():
         pylab.show()
         
 
-    def apply_diffusions(self, data, alpha_value):
+    def apply_diffusions(self, data, alpha_value = 0.8):
         d_maps = []
         P_prime, P, Di, K, D_left = self.find_diffusion_matrix(self.data, alpha_value)
         d_maps.append(self.find_diffusion_map(P_prime, D_left, n_eign=2))
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     print('pre-diffusion loss ', curr_loss)
     
     #Start of diffusion
-    d_maps_final = diff_map.apply_diffusions(training_data, .8)
+    d_maps_final = diff_map.apply_diffusions(diff_map.data, .8)
     diff_map.plot_diffusion(d_maps_final)
     
     curr_loss =loss.get_loss(d_maps_final, diff_map.labels)
