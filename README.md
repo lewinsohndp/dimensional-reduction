@@ -4,6 +4,9 @@ Repository for CP307 Data Structures and Algorithms Final Project
 UMAP:
 To use UMAP class instantiate my_umap.UMAP with wanted paramters. Then call UMAP.fit(X) where X is the dataset to be embedded in low dimension. The embedding can be accessed with UMAP.Y.
 
+t-SEN:
+To use the t-SNE Class, 
+
 UMAP Files:
 1. my_umap.py: Main script for UMAP implemtation containing UMAP Class.
 2. test_umap.py: Script for basic tests of UMAP
@@ -18,6 +21,6 @@ tSNE files:
 Diffusion Mapping Files:
 
 Experiments:
-1. experiments.ipynb: Jupyter Notebook containing all official experiments.
+1. experiments.ipynb: Jupyter Notebook containing all official experiments. Contains the Coordinate Discent algorithm to optimize hyperparameters 
 2. experiments_helpers.py: Script containing methods to help with experiments. Mainly coordinate descent algorithms.
 3. contrastive_loss.py: Script containing class to calculate contrastive loss of embedding.
