@@ -24,6 +24,6 @@ Diffusion Mapping Files:
 Experiments:
 For each algorithm we performed measured contrastive loss as a function of different parameters. For UMAP we tested epochs vs. contrastive loss for both our implementation and the official implementation. For tSNE we tested iterations vs contrastive loss and perplexity vs. loss. For diffusion maps we tested K neighbors vs contrastive loss and alpha vs contrastive loss. We then compared the algorithms by splitting the data 80/20 for training and validation. We then found the optimal parameters for each algorithm using coordinate descent and then tested the algorithms on the validation set. We plotted algorithm vs quality and algorithmn vs time for this test.
 
-1. experiments.ipynb: Jupyter Notebook containing all official experiments. Contains the Coordinate Discent algorithm to optimize hyperparameters 
+1. experiments.ipynb: Jupyter Notebook containing all official experiments.
 2. experiments_helpers.py: Script containing methods to help with experiments. Mainly coordinate descent algorithms.
 3. contrastive_loss.py: Script containing class to calculate contrastive loss of embedding.
