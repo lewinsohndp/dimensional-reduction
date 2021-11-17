@@ -22,6 +22,8 @@ tSNE files:
 2. tsne.ipynb: Jupyter Notebook that has multiple experiments and test, some are also in experiments.ipynb
 
 Diffusion Mapping Files:
+1. diffusion_map.py: Script for diffusion map which contains the DiffusionMap class.
+2. DiffMapExperiments.ipynb: Jupiter Notebook of different experiments using a pydiffmap Diffusion Map to test how changing alpha and kneighbors values impact quality and runtime. Also found in experiments.ipynb
 
 Experiments:
 For each algorithm we performed measured contrastive loss as a function of different parameters. For UMAP we tested epochs vs. contrastive loss for both our implementation and the official implementation. For tSNE we tested iterations vs contrastive loss and perplexity vs. loss. For diffusion maps we tested K neighbors vs contrastive loss and alpha vs contrastive loss. We then compared the algorithms by splitting the data 80/20 for training and validation. We then found the optimal parameters for each algorithm using coordinate descent and then tested the algorithms on the validation set. We plotted algorithm vs quality and algorithmn vs time for this test.
