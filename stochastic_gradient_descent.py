@@ -20,7 +20,7 @@ def optimize_embedding(head_embedding, tail_embedding, a, b, dim, n_epochs, grap
 
     Returns
     --------
-    head_embedding
+    head_embedding : array(n_samples, dimensions)
     """    
     alpha = 1.0
     epochs_per_sample = make_epochs_per_sample(graph.data, n_epochs)

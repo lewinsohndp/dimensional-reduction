@@ -135,7 +135,7 @@ def get_best_perplexity(data, label, e, m, i, tsne):
 
 def get_best_exageration(data, label, p, m, i, tsne):
     """GSS for exageration parameter"""
-    loss = ContrastiveLoss()
+    loss = ContrastiveLoss(5)
     a = 1
     b = 8
     gr = (np.sqrt(5)+1)/2
@@ -165,7 +165,7 @@ def get_best_exageration(data, label, p, m, i, tsne):
 
 def get_best_momentum(data, label, p, e, i, tsne):
     """GSS for momentum parameter"""
-    loss = ContrastiveLoss()
+    loss = ContrastiveLoss(5)
     a = 0.2
     b = 1
     gr = (np.sqrt(5)+1)/2
@@ -235,7 +235,7 @@ def umap_coordinate_descent(data, label):
 
 def get_best_epochs(data, label, epochs, neighbors, min_dist):
     """GSS for epochs parameter"""
-    loss = ContrastiveLoss()
+    loss = ContrastiveLoss(5)
     a = 0
     b = 2000
     gr = (np.sqrt(5)+1)/2
@@ -268,7 +268,7 @@ def get_best_epochs(data, label, epochs, neighbors, min_dist):
 
 def get_best_neighbors(data, label, epochs, neighbors, min_dist):
     """GSS for epochs parameter"""
-    loss = ContrastiveLoss()
+    loss = ContrastiveLoss(5)
     a = 5
     b = 50
     gr = (np.sqrt(5)+1)/2
@@ -301,7 +301,7 @@ def get_best_neighbors(data, label, epochs, neighbors, min_dist):
 
 def get_best_min_dist(data, label, epochs, neighbors, min_dist):
     """GSS for epochs parameter"""
-    loss = ContrastiveLoss()
+    loss = ContrastiveLoss(5)
     a = .01
     b = .99
     gr = (np.sqrt(5)+1)/2
@@ -359,7 +359,7 @@ def diffmap_coordinate_descent(data, label):
     
 def get_best_alpha(data, label, kneigh):
     """GSS for alpha parameter"""
-    loss = ContrastiveLoss()
+    loss = ContrastiveLoss(5)
     a = 0.1
     b = 4
     gr = (np.sqrt(5)+1)/2
@@ -393,7 +393,7 @@ def get_best_alpha(data, label, kneigh):
 
 def get_best_k_neighbors(data, label, alph):
     """GSS for kneighbors parameter"""
-    loss = ContrastiveLoss()
+    loss = ContrastiveLoss(5)
     #min val for kneighbors
     a = 50
     #max

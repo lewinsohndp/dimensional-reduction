@@ -7,6 +7,8 @@ from sklearn.metrics.pairwise import euclidean_distances
 from scipy.optimize import curve_fit
 import stochastic_gradient_descent
 
+"""Implementation of UMAP"""
+
 class UMAP():
     def __init__(self, n_neighbors=10, dims=2, min_dist=.1, epochs=10):
         """
@@ -36,6 +38,10 @@ class UMAP():
     def get_neighbors(self, X):
         """
         Get k nearest neighbors for all points using nearest neighbor descent
+
+        Parameters
+        ----------
+        X : array (n_samples, n_features)
         """
         n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
         n_iters = max(5, int(round(np.log2(X.shape[0]))))
@@ -93,10 +99,13 @@ class UMAP():
         return stochastic_gradient_descent.optimize_embedding(Y,Y,self.a,self.b, self.dims, self.epochs, top_rep, self.graph_rows, self.graph_cols)
         
     def find_ab_params(self, spread, min_dist):
-        """Fit a, b params for the differentiable curve used in lower
-        dimensional fuzzy simplicial complex construction. We want the
-        smooth curve (from a pre-defined family with simple gradient) that
-        best matches an offset exponential decay.
+        """Fit a, b params for the differentiable curve 
+        Adapted from official UMAP implementation
+
+        Parameters
+        ----------
+        spread : float
+        min_dist : float
         """
 
         def curve(x, a, b):
@@ -261,6 +270,8 @@ class UMAP():
 
     def fit(self, X, use_precomputed=False):
         """
+        Finds lower dimensional embedding
+        
         Parameters
         -----------
         X : array of shape (n_samples, n_features)

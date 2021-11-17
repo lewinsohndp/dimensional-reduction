@@ -1,5 +1,7 @@
 import numpy as np 
 
+"""Class for calculating contrastive loss"""
+
 class ContrastiveLoss():
     def __init__(self, margin=1):
         self.margin = margin
@@ -38,8 +40,6 @@ class ContrastiveLoss():
 def euclidean(x, y):
     """Standard euclidean distance.
     Adapted from UMAP implementation
-    ..math::
-        D(x, y) = \sqrt{\sum_i (x_i - y_i)^2}
     """
     result = 0.0
     for i in range(len(x)):
