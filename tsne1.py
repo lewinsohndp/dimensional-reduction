@@ -36,6 +36,7 @@ class TSNE():
         P = np.zeros((n,n))
         sigma = np.ones((n,1))
         sum_X = np.sum(np.square(X), 1)
+        #Adapted from t-SNE implementation
         D = np.add(np.add(-2 * np.dot(X, X.T), sum_X).T, sum_X)
         target = np.log(perplexity)
 
@@ -72,7 +73,7 @@ class TSNE():
                 (Pi, H) = self.getPH(Di, sigma[i])
                 Haway = H - target
                 j += 1
-
+            #insert Pi into the offical P for all
             P[i, np.concatenate((np.r_[0:i], np.r_[i+1:n]))] = Pi
 
         return P
