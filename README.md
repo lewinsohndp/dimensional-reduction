@@ -5,7 +5,7 @@ UMAP:
 To use UMAP class instantiate my_umap.UMAP with wanted paramters. Then call UMAP.fit(X) where X is the dataset to be embedded in low dimension. The embedding can be accessed with UMAP.Y.
 
 t-SEN:
-To use the t-SNE Class, 
+To use the t-SNE Class, create an instace. To run a t-SNE on a dataset, call the tsne method and pass in the array of data. All parameters are set as inputs for the tsne method. It then returns an array of length of the input with a lower dimention. 
 
 Diffusion Map: To use the DiffusionMap class, create an instance (for example one called diff_map) of the class and fill in needed parameters (data and labels). Using the DiffusionMap instance, call the apply_difffusions method, passing in the instance's data variable (ex: diff_map.data) and a specified alpha variable (default is .8). Save what is returned from the apply_diffusions method as a variable. Then using the instance of the DiffusionMap class, call the plot_diffusions method, passing in the returned value from apply_diffusions.
 
